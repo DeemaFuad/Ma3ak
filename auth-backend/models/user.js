@@ -1,34 +1,53 @@
 const mongoose = require('mongoose');
 
-const emailValidator = (email) => {
-  return email.endsWith('@university.edu'); // the user should use their university email address
-};
-
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    email: { 
-      type: String, 
-      unique: true, 
-      required: true, 
-      validate: [emailValidator, 'Please use your university email address']
-    },
-    password: { type: String, required: true },
-    userType: {
-      type: String,
-      enum: ['blind', 'volunteer'],
-      required: true,
-    },
-    major: { type: String, required: false }, 
-    year: { 
-      type: String, 
-      enum: ['First', 'Second', 'Third', 'Fourth'], 
-      required: false 
-    }, 
-    phoneNumber: { type: String, required: true }, 
-    bio: { type: String, required: false }, // Optional: A brief bio or description
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true
   },
-  { timestamps: true }
-);
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    trim: true,
+    lowercase: true,
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minlength: [6, 'Password must be at least 6 characters long']
+  },
+  userType: {
+    type: String,
+    required: [true, 'User type is required'],
+    enum: ['blind', 'volunteer'],
+    lowercase: true
+  },
+  phoneNumber: {
+    type: String,
+    required: [true, 'Phone number is required'],
+    trim: true
+  },
+  major: {
+    type: String,
+    trim: true
+  },
+  year: {
+    type: String,
+    enum: ['First', 'Second', 'Third', 'Fourth'],
+    trim: true
+  },
+  bio: {
+    type: String,
+    trim: true,
+    maxlength: [500, 'Bio cannot be more than 500 characters']
+  }
+}, {
+  timestamps: true
+});
 
-module.exports = mongoose.model('User', userSchema, 'userss'); 
+// Create index for email
+userSchema.index({ email: 1 }, { unique: true });
+
+module.exports = mongoose.model('User', userSchema); 

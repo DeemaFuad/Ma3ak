@@ -23,7 +23,7 @@ export default function WelcomeScreen({ navigation }) {
             styles.button,
             pressed && styles.buttonPressed
           ]}
-          onPress={() => navigation.navigate('SignUp')} // 👈 navigate to Login screen
+          onPress={() => navigation.navigate('Login')} // 👈 navigate to Login screen
         >
           <Text style={styles.buttonText}>Get Started</Text>
         </Pressable>
