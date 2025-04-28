@@ -11,18 +11,23 @@ import {
   ActivityIndicator,
   Platform,
   Vibration,
+  Image,
 } from 'react-native';
 import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/Ionicons';
 import MapView, { Marker } from 'react-native-maps';
+import { useNavigation } from '@react-navigation/native';
+import Header from '../components/Header';
 
 const RequestAssistanceScreen = () => {
+  const navigation = useNavigation();
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isMapVisible, setIsMapVisible] = useState(false);
   const [mapRegion, setMapRegion] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasUnseenNotifications, setHasUnseenNotifications] = useState(true); // This would come from your state management
 
   const getCurrentLocation = async () => {
     try {
@@ -98,110 +103,107 @@ const RequestAssistanceScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Request Assistance</Text>
-      
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Describe your request</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="What kind of help do you need?"
-          placeholderTextColor="#757575"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={6}
-          minHeight={150}
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Location</Text>
-        <TouchableOpacity
-          style={styles.locationButton}
-          onPress={getCurrentLocation}
-          disabled={isLoading}
-          accessibilityLabel="Select location on map"
-          accessibilityHint="Opens a map view where you can adjust your location"
-        >
-          <Text style={styles.locationButtonText}>
-            {location ? 'Adjust Location' : 'Select Location'}
-          </Text>
-        </TouchableOpacity>
-        <Text style={styles.helperText}>
-          Tap to adjust your location on the map.
-        </Text>
-        {location && (
-          <Text style={styles.locationText}>
-            Latitude: {location.latitude.toFixed(4)}, Longitude: {location.longitude.toFixed(4)}
-          </Text>
-        )}
-      </View>
-
-      <TouchableOpacity
-        style={styles.submitButton}
-        onPress={handleSubmit}
-        disabled={isSubmitting}
-        accessibilityLabel="Submit request"
-        accessibilityHint="Sends your assistance request"
-      >
-        {isSubmitting ? (
-          <ActivityIndicator color="white" />
-        ) : (
-          <>
-            <Icon name="send" size={24} color="white" style={styles.submitIcon} />
-            <Text style={styles.submitButtonText}>Submit Request</Text>
-          </>
-        )}
-      </TouchableOpacity>
-
-      <Modal
-        visible={isMapVisible}
-        animationType="slide"
-        onRequestClose={() => setIsMapVisible(false)}
-      >
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            region={mapRegion}
-            onPress={handleMapPress}
-            accessibilityLabel="Map view"
-            accessibilityHint="Move the map to adjust your location. Confirm when ready."
-          >
-            {mapRegion && (
-              <Marker
-                coordinate={{
-                  latitude: mapRegion.latitude,
-                  longitude: mapRegion.longitude,
-                }}
-              />
-            )}
-          </MapView>
-          <TouchableOpacity
-            style={styles.confirmButton}
-            onPress={confirmLocation}
-            accessibilityLabel="Confirm location"
-          >
-            <Text style={styles.confirmButtonText}>Confirm Location</Text>
-          </TouchableOpacity>
+    <View style={styles.container}>
+      <Header title="Request Assistance" />
+      <ScrollView style={styles.content}>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Describe your request</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="What kind of help do you need?"
+            placeholderTextColor="#757575"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={6}
+            minHeight={150}
+          />
         </View>
-      </Modal>
-    </ScrollView>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Location</Text>
+          <TouchableOpacity
+            style={styles.locationButton}
+            onPress={getCurrentLocation}
+            disabled={isLoading}
+            accessibilityLabel="Select location on map"
+            accessibilityHint="Opens a map view where you can adjust your location"
+          >
+            <Text style={styles.locationButtonText}>
+              {location ? 'Adjust Location' : 'Select Location'}
+            </Text>
+          </TouchableOpacity>
+          <Text style={styles.helperText}>
+            Tap to adjust your location on the map.
+          </Text>
+          {location && (
+            <Text style={styles.locationText}>
+              Latitude: {location.latitude.toFixed(4)}, Longitude: {location.longitude.toFixed(4)}
+            </Text>
+          )}
+        </View>
+
+        <TouchableOpacity
+          style={styles.submitButton}
+          onPress={handleSubmit}
+          disabled={isSubmitting}
+          accessibilityLabel="Submit request"
+          accessibilityHint="Sends your assistance request"
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <>
+              <Icon name="send" size={24} color="white" style={styles.submitIcon} />
+              <Text style={styles.submitButtonText}>Submit Request</Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <Modal
+          visible={isMapVisible}
+          animationType="slide"
+          onRequestClose={() => setIsMapVisible(false)}
+        >
+          <View style={styles.mapContainer}>
+            <MapView
+              style={styles.map}
+              region={mapRegion}
+              onPress={handleMapPress}
+              accessibilityLabel="Map view"
+              accessibilityHint="Move the map to adjust your location. Confirm when ready."
+            >
+              {mapRegion && (
+                <Marker
+                  coordinate={{
+                    latitude: mapRegion.latitude,
+                    longitude: mapRegion.longitude,
+                  }}
+                />
+              )}
+            </MapView>
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={confirmLocation}
+              accessibilityLabel="Confirm location"
+            >
+              <Text style={styles.confirmButtonText}>Confirm Location</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#FFFFFF',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 30,
-    fontFamily: 'Roboto',
+  content: {
+    flex: 1,
+    padding: 20,
   },
   inputContainer: {
     marginBottom: 25,

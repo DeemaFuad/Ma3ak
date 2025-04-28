@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
+import Header from '../components/Header';
 
 // Mock data - replace with actual API calls
 const mockRequests = [
@@ -91,6 +92,7 @@ const MyRequestsScreen = () => {
 
   return (
     <View style={styles.container}>
+      <Header title="Requests Page" /> {/* <<< Header added here */}
       <Text style={styles.title}>My Requests</Text>
       <FlatList
         data={requests}
@@ -169,4 +171,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MyRequestsScreen; 
+export default MyRequestsScreen;

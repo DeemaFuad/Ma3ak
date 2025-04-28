@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import Header from '../components/Header';
 
 const VolunteerHomeScreen = () => {
   return (
     <View style={styles.container}>
+      <Header title="Home" />
       <Text style={styles.text}>Welcome to Volunteer Home Page</Text>
     </View>
   );

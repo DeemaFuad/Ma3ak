@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getStoredUser, logout } from '../utils/auth';
+import Header from '../components/Header';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -58,86 +59,12 @@ const ProfileScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Personal Information</Text>
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.name}
-            onChangeText={(text) => setFormData({ ...formData, name: text })}
-            editable={isEditing}
-            placeholder="Enter your name"
-            placeholderTextColor="#6C757D"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.email}
-            onChangeText={(text) => setFormData({ ...formData, email: text })}
-            editable={isEditing}
-            keyboardType="email-address"
-            placeholder="Enter your email"
-            placeholderTextColor="#6C757D"
-          />
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Phone</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.phone}
-            onChangeText={(text) => setFormData({ ...formData, phone: text })}
-            editable={isEditing}
-            keyboardType="phone-pad"
-            placeholder="Enter your phone number"
-            placeholderTextColor="#6C757D"
-          />
-        </View>
-
-        {isEditing ? (
-          <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-            <Text style={styles.buttonText}>Save Changes</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => setIsEditing(true)}
-          >
-            <Text style={styles.buttonText}>Edit Profile</Text>
-          </TouchableOpacity>
-        )}
+    <View style={styles.container}>
+      <Header title="Profile" />
+      <View style={styles.content}>
+        <Text style={styles.text}>Profile Screen Content</Text>
       </View>
-
-      {user?.userType === 'volunteer' && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Volunteer Stats</Text>
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>12</Text>
-              <Text style={styles.statLabel}>Tasks Completed</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>4.8</Text>
-              <Text style={styles.statLabel}>Rating</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      <TouchableOpacity
-        style={[styles.button, styles.logoutButton]}
-        onPress={handleLogout}
-      >
-        <Text style={styles.buttonText}>Logout</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 };
 
@@ -145,6 +72,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    fontSize: 16,
+    color: '#212529',
+    fontFamily: 'Roboto',
   },
   title: {
     fontSize: 24,

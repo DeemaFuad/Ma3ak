@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getStoredUser } from '../utils/auth';
+import Header from '../components/Header';
 
 const BlindHomeScreen = () => {
   const navigation = useNavigation();
@@ -16,7 +17,9 @@ const BlindHomeScreen = () => {
   }, []);
 
   return (
+    
     <View style={styles.container}>
+      <Header title="Home" />
       <Text style={styles.welcomeText}>Hi {user?.name || 'there'}!</Text>
       <Text style={styles.subtitle}>How can we help you today?</Text>
 
