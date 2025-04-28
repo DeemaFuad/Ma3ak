@@ -50,7 +50,7 @@ const SignUpScreen = () => {
     
     try {
       console.log('Making API request to:', 'http://localhost:5000/auth/signup');
-      const res = await axios.post('http://192.168.0.107:5000/auth/signup', form);
+      const res = await axios.post('http://192.168.43.143:5000/auth/signup', form);
       console.log('API Response:', res.data);
       
       Alert.alert('Success', res.data.msg || 'Account created!');
@@ -156,7 +156,8 @@ const SignUpScreen = () => {
 const styles = StyleSheet.create({
   container: { 
     padding: 20, 
-    paddingTop: 50 
+    paddingTop: 50,
+    backgroundColor: '#DBDBDB',
   },
   title: { 
     fontSize: 24, 
@@ -190,7 +191,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selected: {
-    backgroundColor: '#007bff', 
+    backgroundColor: '#14957B', 
     borderColor: '#0056b3',
   },
   selectedText: {
@@ -198,7 +199,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: '#007bff', 
+    backgroundColor: '#14957B', 
     padding: 15, 
     borderRadius: 10, 
     alignItems: 'center',

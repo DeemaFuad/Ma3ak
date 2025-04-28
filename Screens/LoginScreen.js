@@ -1,4 +1,3 @@
-// screens/LoginScreen.js
 import React, { useState } from 'react';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Importing FontAwesome icons
 import {
@@ -17,14 +16,13 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.0.107:5000/auth'; // Use http:// and your development machine's local IP address
+const API_URL = 'http://192.168.43.143:5000/auth'; // Use http:// and your development machine's local IP address
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation, onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const navigation = useNavigation();
 
   const storeUserData = async (token, user) => {
     try {
@@ -58,7 +56,7 @@ export default function LoginScreen() {
       // Set the authorization header for future requests
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Force reload by navigating to Welcome and then back to Login
+      // Force reload by resetting navigation to Welcome screen
       navigation.reset({
         index: 0,
         routes: [{ name: 'Welcome' }],
@@ -85,7 +83,7 @@ export default function LoginScreen() {
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <View style={styles.inputContainer}>
-          <Icon name="user" size={20} color="#DBDBDB" style={styles.icon} />
+            <Icon name="user" size={20} color="#DBDBDB" style={styles.icon} />
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -94,14 +92,14 @@ export default function LoginScreen() {
                 setEmail(text);
                 setError('');
               }}
-              
               keyboardType="email-address"
               autoCapitalize="none"
               editable={!loading}
               placeholderTextColor="#DBDBDB"
             />
-            </View>
-            <View style={styles.inputContainer}>
+          </View>
+          
+          <View style={styles.inputContainer}>
             <Icon name="lock" size={20} color="#DBDBDB" style={styles.icon} />
             <TextInput
               style={styles.input}
@@ -185,7 +183,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   loginButtonDisabled: {
-    backgroundColor: '#2d5f2f',
+    backgroundColor: '#ccc',
   },
   loginButtonText: {
     color: '#ffffff',
