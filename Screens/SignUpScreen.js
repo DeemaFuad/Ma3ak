@@ -50,7 +50,7 @@ const SignUpScreen = () => {
     
     try {
       console.log('Making API request to:', 'http://localhost:5000/auth/signup');
-      const res = await axios.post('http://192.168.43.143:5000/auth/signup', form);
+      const res = await axios.post('http://10.0.2.2:5000/auth/signup', form);
       console.log('API Response:', res.data);
       
       Alert.alert('Success', res.data.msg || 'Account created!');

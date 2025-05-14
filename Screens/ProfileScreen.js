@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getStoredUser, logout } from '../utils/auth';
@@ -21,6 +22,9 @@ const ProfileScreen = () => {
     name: '',
     email: '',
     phone: '',
+    major: '',
+    year: '',
+    bio: '',
   });
 
   useEffect(() => {
@@ -30,7 +34,10 @@ const ProfileScreen = () => {
       setFormData({
         name: userData?.name || '',
         email: userData?.email || '',
-        phone: userData?.phone || '',
+        phone: userData?.phoneNumber || '',
+        major: userData?.major || '',
+        year: userData?.year || '',
+        bio: userData?.bio || '',
       });
     };
     loadUser();
@@ -61,9 +68,125 @@ const ProfileScreen = () => {
   return (
     <View style={styles.container}>
       <Header title="Profile" />
-      <View style={styles.content}>
-        <Text style={styles.text}>Profile Screen Content</Text>
-      </View>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.profileHeader}>
+          <Image
+            source={require('../assets/profile-placeholder.png')}
+            style={styles.profileImage}
+          />
+          <Text style={styles.userName}>{user?.name || 'User'}</Text>
+          <Text style={styles.userType}>{user?.userType === 'blind' ? 'Blind Student' : 'Volunteer'}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+          
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Name</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.name}
+                onChangeText={(text) => setFormData({ ...formData, name: text })}
+              />
+            ) : (
+              <Text style={styles.text}>{formData.name}</Text>
+            )}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.email}
+                onChangeText={(text) => setFormData({ ...formData, email: text })}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            ) : (
+              <Text style={styles.text}>{formData.email}</Text>
+            )}
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Phone</Text>
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={formData.phone}
+                onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                keyboardType="phone-pad"
+              />
+            ) : (
+              <Text style={styles.text}>{formData.phone}</Text>
+            )}
+          </View>
+
+          {user?.userType === 'blind' && (
+            <>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Major</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={styles.input}
+                    value={formData.major}
+                    onChangeText={(text) => setFormData({ ...formData, major: text })}
+                  />
+                ) : (
+                  <Text style={styles.text}>{formData.major}</Text>
+                )}
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Year</Text>
+                {isEditing ? (
+                  <TextInput
+                    style={styles.input}
+                    value={formData.year}
+                    onChangeText={(text) => setFormData({ ...formData, year: text })}
+                  />
+                ) : (
+                  <Text style={styles.text}>{formData.year}</Text>
+                )}
+              </View>
+            </>
+          )}
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Bio</Text>
+            {isEditing ? (
+              <TextInput
+                style={[styles.input, { height: 80 }]}
+                value={formData.bio}
+                onChangeText={(text) => setFormData({ ...formData, bio: text })}
+                multiline
+              />
+            ) : (
+              <Text style={styles.text}>{formData.bio}</Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.buttonContainer}>
+          {isEditing ? (
+            <TouchableOpacity style={styles.button} onPress={handleUpdate}>
+              <Text style={styles.buttonText}>Save Changes</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.button} onPress={() => setIsEditing(true)}>
+              <Text style={styles.buttonText}>Edit Profile</Text>
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity 
+            style={[styles.button, styles.logoutButton]} 
+            onPress={handleLogout}
+          >
+            <Text style={styles.buttonText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -73,22 +196,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
-  content: {
+  scrollView: {
     flex: 1,
-    padding: 20,
-    justifyContent: 'center',
+  },
+  profileHeader: {
     alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#F8F9FA',
   },
-  text: {
-    fontSize: 16,
-    color: '#212529',
-    fontFamily: 'Roboto',
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
   },
-  title: {
+  userName: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#212529',
-    margin: 20,
+    marginBottom: 5,
+  },
+  userType: {
+    fontSize: 16,
+    color: '#6C757D',
   },
   section: {
     backgroundColor: '#FFFFFF',
@@ -131,14 +261,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
+  text: {
+    fontSize: 16,
+    color: '#212529',
+    padding: 12,
+  },
+  buttonContainer: {
+    padding: 20,
+    gap: 10,
+  },
   button: {
     backgroundColor: '#14957B',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
-    width: '85%',
-    alignSelf: 'center',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -152,25 +288,6 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     backgroundColor: '#FF3B30',
-    margin: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statValue: {
-    color: '#212529',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  statLabel: {
-    color: '#6C757D',
-    fontSize: 14,
-    marginTop: 5,
   },
 });
 

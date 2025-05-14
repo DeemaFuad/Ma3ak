@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const Request = require('../models/Request');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -17,6 +18,18 @@ const generateToken = (user) => {
     { expiresIn: '1d' }
   );
 };
+
+// Authentication middleware
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ success: false, msg: 'No token provided' });
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ success: false, msg: 'Invalid token' });
+    req.user = user;
+    next();
+  });
+}
 
 // Sign up
 router.post('/signup', async (req, res) => {
@@ -166,6 +179,34 @@ router.post('/login', async (req, res) => {
       msg: 'Server error',
       error: error.message
     });
+  }
+});
+
+// POST /auth/requests - Create a new assistance request
+router.post('/requests', authenticateToken, async (req, res) => {
+  try {
+    const { assistanceType, description, location } = req.body;
+    if (!assistanceType) {
+      return res.status(400).json({ success: false, msg: 'assistanceType is required' });
+    }
+    if (!location || typeof location.latitude !== 'number' || typeof location.longitude !== 'number') {
+      return res.status(400).json({ success: false, msg: 'Valid location (latitude & longitude) is required' });
+    }
+    // Only require description if assistanceType is 'Other'
+    if (assistanceType === 'Other' && (!description || !description.trim())) {
+      return res.status(400).json({ success: false, msg: 'Description is required when assistanceType is Other' });
+    }
+    const newRequest = new Request({
+      userId: req.user.id,
+      assistanceType,
+      description,
+      location,
+    });
+    const savedRequest = await newRequest.save();
+    res.status(201).json({ success: true, request: savedRequest });
+  } catch (error) {
+    console.error('Request creation error:', error);
+    res.status(500).json({ success: false, msg: 'Server error', error: error.message });
   }
 });
 

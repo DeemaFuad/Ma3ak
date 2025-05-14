@@ -4,7 +4,6 @@
     "slug": "ma3akV1",
     "version": "1.0.0",
     "orientation": "portrait",
-    
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -29,10 +28,16 @@
         "image": "./logo.png",
         "resizeMode": "cover",
         "backgroundColor": "#000000"
-      }
+      },
+      "package": "com.deemafuad.ma3akV1"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9b75873a-31cb-41fb-b16c-76b65a398aa3"
+      }
     }
   }
 }

@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.43.143:5000/auth'; // Use http:// and your development machine's local IP address
+const API_URL = 'http://10.0.2.2:5000/auth'; // Use http:// and your development machine's local IP address
 
 export default function LoginScreen({ navigation, onLoginSuccess }) {
   const [email, setEmail] = useState('');
