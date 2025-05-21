@@ -15,6 +15,7 @@ import VolunteerHomeScreen from './Screens/VolunteerHomeScreen';
 import ProfileScreen from './Screens/ProfileScreen';
 import RequestAssistanceScreen from './Screens/RequestAssistanceScreen';
 import MyRequestsScreen from './Screens/MyRequestsScreen';
+import VolunteerRequestsScreen from './Screens/VolunteerRequestsScreen';
 
 import { initializeAuth, isAuthenticated, getStoredUser } from './utils/auth';
 
@@ -101,6 +102,16 @@ const VolunteerTabs = () => {
             <Icon name="home-outline" size={size} color={color} />
           ),
           title: 'Home',
+        }}
+      />
+      <Tab.Screen
+        name="VolunteerRequests"
+        component={VolunteerRequestsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="people-outline" size={size} color={color} />
+          ),
+          title: 'Requests',
         }}
       />
       <Tab.Screen

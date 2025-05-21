@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
   name: {
     type: String,
     required: [true, 'Name is required'],
@@ -42,11 +42,39 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
     maxlength: [500, 'Bio cannot be more than 500 characters']
+  },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number],
+      default: [0, 0]
+    }
+  },
+  deviceToken: {
+    type: String,
+    default: null
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  lastLocationUpdate: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
 });
 
 // Create index for email
+UserSchema.index({ location: '2dsphere' });
 
-module.exports = mongoose.model('User', userSchema); 
+module.exports = mongoose.models.User || mongoose.model('User', UserSchema);

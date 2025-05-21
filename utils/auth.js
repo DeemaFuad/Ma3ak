@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/auth';
+const API_URL = 'http://192.168.0.110:5000/auth';
 
 export const getStoredUser = async () => {
   try {
