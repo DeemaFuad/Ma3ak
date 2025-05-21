@@ -185,23 +185,46 @@ router.post('/login', async (req, res) => {
 // POST /auth/requests - Create a new assistance request
 router.post('/requests', authenticateToken, async (req, res) => {
   try {
+    console.log("Original request body:", JSON.stringify(req.body));
+    
     const { assistanceType, description, location } = req.body;
+    console.log("Extracted location:", JSON.stringify(location));
+    
     if (!assistanceType) {
       return res.status(400).json({ success: false, msg: 'assistanceType is required' });
     }
-    if (!location || typeof location.latitude !== 'number' || typeof location.longitude !== 'number') {
-      return res.status(400).json({ success: false, msg: 'Valid location (latitude & longitude) is required' });
+    
+    // Validate the location structure
+    if (!location || !location.coordinates || !Array.isArray(location.coordinates) || location.coordinates.length !== 2) {
+      return res.status(400).json({ success: false, msg: 'Valid location coordinates are required' });
     }
+    
     // Only require description if assistanceType is 'Other'
     if (assistanceType === 'Other' && (!description || !description.trim())) {
       return res.status(400).json({ success: false, msg: 'Description is required when assistanceType is Other' });
     }
-    const newRequest = new Request({
+    
+    // We don't need to transform the location since it's already in the right format
+    
+    console.log("Creating request with:", JSON.stringify({
       userId: req.user.id,
       assistanceType,
       description,
-      location,
+      location
+    }));
+    
+    const newRequest = new Request({
+      userId: req.user.id,
+      assistanceType,
+      description: description || "", // Handle undefined
+      location: {
+        type: location.type || 'Point',
+        coordinates: location.coordinates
+      }
     });
+    
+    console.log("Request model before save:", JSON.stringify(newRequest));
+    
     const savedRequest = await newRequest.save();
     res.status(201).json({ success: true, request: savedRequest });
   } catch (error) {
@@ -209,5 +232,4 @@ router.post('/requests', authenticateToken, async (req, res) => {
     res.status(500).json({ success: false, msg: 'Server error', error: error.message });
   }
 });
-
 module.exports = router; 

@@ -238,22 +238,30 @@ const RequestAssistanceScreen = () => {
         Alert.alert('Error', 'You must be logged in to submit a request.');
         return;
       }
+
       const payload = {
-        assistanceType: ASSISTANCE_OPTIONS.find(o => o.key === selectedOption)?.label || selectedOption,
-        description: isOtherSelected ? otherText : undefined,
+        assistanceType: selectedOption,
+        description: isOtherSelected ? otherText.trim() : undefined,
         location: {
-          latitude: location.latitude,
-          longitude: location.longitude,
-        },
+          type: "Point",
+          coordinates: [location.longitude, location.latitude]  // Note: GeoJSON format is [longitude, latitude]
+        }
       };
-      const res = await axios.post('http://10.0.2.2:5000/auth/requests', payload, {
+      
+      console.log('Submitting payload:', payload);
+      const res = await axios.post('http://192.168.0.110:5000/auth/requests', payload, {
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
       });
+
       setIsSubmitting(false);
       Alert.alert('Success', 'Your request has been submitted!');
-      // Optionally, reset form or navigate
+      // Reset form
+      setSelectedOption(null);
+      setOtherText('');
+      setLocation(null);
     } catch (error) {
       setIsSubmitting(false);
       let msg = 'Failed to submit request.';
