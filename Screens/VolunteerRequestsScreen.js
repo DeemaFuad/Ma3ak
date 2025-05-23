@@ -17,7 +17,7 @@ import { getAuthToken } from '../config';
 import axios from 'axios';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
-const API_URL = 'http://192.168.0.110:5000';
+const API_URL = 'http://192.168.0.102:5000';
 
 const VolunteerRequestsScreen = () => {
   const [requests, setRequests] = useState([]);

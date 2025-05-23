@@ -249,7 +249,7 @@ const RequestAssistanceScreen = () => {
       };
       
       console.log('Submitting payload:', payload);
-      const res = await axios.post('http://192.168.0.110:5000/auth/requests', payload, {
+      const res = await axios.post('http://192.168.0.102:5000/auth/requests', payload, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,

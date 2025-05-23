@@ -232,4 +232,28 @@ router.post('/requests', authenticateToken, async (req, res) => {
     res.status(500).json({ success: false, msg: 'Server error', error: error.message });
   }
 });
+
+// GET /auth/active-requests - Get user's active requests
+router.get('/active-requests', authenticateToken, async (req, res) => {
+  try {
+    const activeRequests = await Request.find({
+      userId: req.user.id,
+      status: { $in: ['pending', 'attended'] }
+    })
+    .populate('assignedVolunteer', 'name phoneNumber')
+    .sort({ createdAt: -1 });
+
+    res.json({ 
+      success: true, 
+      requests: activeRequests 
+    });
+  } catch (error) {
+    console.error('Error fetching active requests:', error);
+    res.status(500).json({ 
+      success: false, 
+      msg: 'Failed to fetch active requests' 
+    });
+  }
+});
+
 module.exports = router; 

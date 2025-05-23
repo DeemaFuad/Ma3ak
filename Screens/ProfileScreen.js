@@ -8,48 +8,141 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getStoredUser, logout } from '../utils/auth';
 import Header from '../components/Header';
+import axios from 'axios';
+import Icon from 'react-native-vector-icons/Feather';
+
+const API_URL = 'http://192.168.0.102:5000/api/profile';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
-    major: '',
-    year: '',
+    phoneNumber: '',
     bio: '',
   });
 
   useEffect(() => {
-    const loadUser = async () => {
-      const userData = await getStoredUser();
-      setUser(userData);
-      setFormData({
-        name: userData?.name || '',
-        email: userData?.email || '',
-        phone: userData?.phoneNumber || '',
-        major: userData?.major || '',
-        year: userData?.year || '',
-        bio: userData?.bio || '',
-      });
-    };
-    loadUser();
+    loadUserProfile();
   }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      setLoading(true);
+      const userData = await getStoredUser();
+      if (!userData?.token) {
+        Alert.alert(
+          'Session Expired',
+          'Please log in again to continue.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                logout();
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Welcome' }],
+                });
+              },
+            },
+          ]
+        );
+        return;
+      }
+
+      const response = await axios.get(API_URL, {
+        headers: {
+          Authorization: `Bearer ${userData.token}`
+        }
+      });
+
+      if (response.data.success) {
+        setUser(response.data.user);
+        setFormData({
+          name: response.data.user.name || '',
+          email: response.data.user.email || '',
+          phoneNumber: response.data.user.phoneNumber || '',
+          bio: response.data.user.bio || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      if (error.response?.status === 401) {
+        Alert.alert(
+          'Session Expired',
+          'Please log in again to continue.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                logout();
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Welcome' }],
+                });
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to load profile data');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUpdate = async () => {
     try {
-      // TODO: Call API to update user profile
-      setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully');
+      setLoading(true);
+      const userData = await getStoredUser();
+      if (!userData?.token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await axios.put(API_URL, formData, {
+        headers: {
+          Authorization: `Bearer ${userData.token}`
+        }
+      });
+
+      if (response.data.success) {
+        setUser(response.data.user);
+        setIsEditing(false);
+        Alert.alert('Success', 'Profile updated successfully');
+      }
     } catch (error) {
-      Alert.alert('Error', 'Failed to update profile');
+      console.error('Error updating profile:', error);
+      if (error.response?.status === 401) {
+        Alert.alert(
+          'Session Expired',
+          'Please log in again to continue.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                logout();
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: 'Welcome' }],
+                });
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error', error.response?.data?.msg || 'Failed to update profile');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,29 +158,51 @@ const ProfileScreen = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3BA99C" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Header title="Profile" />
       <ScrollView style={styles.scrollView}>
         <View style={styles.profileHeader}>
-          <Image
-            source={require('../assets/profile-placeholder.png')}
-            style={styles.profileImage}
-          />
-          <Text style={styles.userName}>{user?.name || 'User'}</Text>
-          <Text style={styles.userType}>{user?.userType === 'blind' ? 'Blind Student' : 'Volunteer'}</Text>
+          <Text>
+          <Text style={styles.userName}>{user?.name+"   " || 'User'}</Text>
+          <Text style={styles.userType}>{user?.userType === 'blind' ? 'Blind Student' : 'Volunteer'}</Text></Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <TouchableOpacity 
+              onPress={isEditing ? handleUpdate : () => setIsEditing(true)}
+              disabled={loading}
+              style={styles.editButton}
+            >
+              <Icon 
+                name={isEditing ? 'check' : 'edit-2'} 
+                size={20} 
+                color="#14957B" 
+              />
+            </TouchableOpacity>
+          </View>
           
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Name</Text>
+            <View style={styles.labelContainer}>
+              <Icon name="user" size={18} color="#14957B" style={styles.labelIcon} />
+              <Text style={styles.label}>Name</Text>
+            </View>
             {isEditing ? (
               <TextInput
                 style={styles.input}
                 value={formData.name}
                 onChangeText={(text) => setFormData({ ...formData, name: text })}
+                placeholder="Enter your name"
               />
             ) : (
               <Text style={styles.text}>{formData.name}</Text>
@@ -95,94 +210,58 @@ const ProfileScreen = () => {
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email</Text>
-            {isEditing ? (
-              <TextInput
-                style={styles.input}
-                value={formData.email}
-                onChangeText={(text) => setFormData({ ...formData, email: text })}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            ) : (
-              <Text style={styles.text}>{formData.email}</Text>
-            )}
+            <View style={styles.labelContainer}>
+              <Icon name="mail" size={18} color="#14957B" style={styles.labelIcon} />
+              <Text style={styles.label}>Email</Text>
+            </View>
+            <Text style={styles.text}>{formData.email}</Text>
           </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Phone</Text>
+            <View style={styles.labelContainer}>
+              <Icon name="phone" size={18} color="#14957B" style={styles.labelIcon} />
+              <Text style={styles.label}>Phone</Text>
+            </View>
             {isEditing ? (
               <TextInput
                 style={styles.input}
-                value={formData.phone}
-                onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                value={formData.phoneNumber}
+                onChangeText={(text) => setFormData({ ...formData, phoneNumber: text })}
                 keyboardType="phone-pad"
+                placeholder="Enter your phone number"
               />
             ) : (
-              <Text style={styles.text}>{formData.phone}</Text>
+              <Text style={styles.text}>{formData.phoneNumber}</Text>
             )}
           </View>
 
-          {user?.userType === 'blind' && (
-            <>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Major</Text>
-                {isEditing ? (
-                  <TextInput
-                    style={styles.input}
-                    value={formData.major}
-                    onChangeText={(text) => setFormData({ ...formData, major: text })}
-                  />
-                ) : (
-                  <Text style={styles.text}>{formData.major}</Text>
-                )}
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Year</Text>
-                {isEditing ? (
-                  <TextInput
-                    style={styles.input}
-                    value={formData.year}
-                    onChangeText={(text) => setFormData({ ...formData, year: text })}
-                  />
-                ) : (
-                  <Text style={styles.text}>{formData.year}</Text>
-                )}
-              </View>
-            </>
-          )}
-
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Bio</Text>
+            <View style={styles.labelContainer}>
+              <Icon name="file-text" size={18} color="#14957B" style={styles.labelIcon} />
+              <Text style={styles.label}>Bio</Text>
+            </View>
             {isEditing ? (
               <TextInput
                 style={[styles.input, { height: 80 }]}
                 value={formData.bio}
                 onChangeText={(text) => setFormData({ ...formData, bio: text })}
                 multiline
+                placeholder="Tell us about yourself"
+                maxLength={500}
               />
             ) : (
-              <Text style={styles.text}>{formData.bio}</Text>
+              <Text style={styles.text}>{formData.bio || 'No bio provided'}</Text>
             )}
           </View>
         </View>
 
         <View style={styles.buttonContainer}>
-          {isEditing ? (
-            <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-              <Text style={styles.buttonText}>Save Changes</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.button} onPress={() => setIsEditing(true)}>
-              <Text style={styles.buttonText}>Edit Profile</Text>
-            </TouchableOpacity>
-          )}
-          
           <TouchableOpacity 
             style={[styles.button, styles.logoutButton]} 
             onPress={handleLogout}
+            disabled={loading}
           >
+            <Icon name="log-out" size={20} color="#FFFFFF" style={styles.buttonIcon} />
             <Text style={styles.buttonText}>Logout</Text>
           </TouchableOpacity>
         </View>
@@ -194,7 +273,13 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#EDEFF1',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#EDEFF1',
   },
   scrollView: {
     flex: 1,
@@ -203,12 +288,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: '#F8F9FA',
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 10,
   },
   userName: {
     fontSize: 24,
@@ -221,9 +300,9 @@ const styles = StyleSheet.create({
     color: '#6C757D',
   },
   section: {
-    backgroundColor: '#FFFFFF',
-    margin: 20,
-    padding: 20,
+    backgroundColor: '#FAFAFB',
+    margin: 10,
+    padding: 10,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#CED4DA',
@@ -233,28 +312,43 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 20,
+    color: '#1C1C1E',
+  },
+  editButton: {
+    padding: 8,
   },
   inputContainer: {
     marginBottom: 15,
   },
-  label: {
-    color: '#212529',
-    fontSize: 16,
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 5,
+  },
+  labelIcon: {
+    marginRight: 8,
+  },
+  label: {
+    color: '#1C1C1E',
+    fontSize: 16,
   },
   input: {
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     padding: 12,
-    color: '#212529',
+    color: '#1C1C1E',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#CED4DA',
+    borderColor: '#D1D5DB',
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -263,15 +357,24 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 16,
-    color: '#212529',
+    color: '#1C1C1E',
     padding: 12,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
   },
   buttonContainer: {
     padding: 20,
     gap: 10,
   },
   button: {
-    backgroundColor: '#14957B',
+    backgroundColor: '#FF3B30',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
@@ -280,6 +383,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
   buttonText: {
     color: 'white',

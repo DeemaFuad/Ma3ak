@@ -13,10 +13,7 @@ const Header = ({ title, showNotificationDot = false }) => {
         onPress={() => navigation.navigate('Profile')}
         accessibilityLabel="Go to profile"
       >
-        <Image
-          source={require('../assets/profile-placeholder.png')}
-          style={styles.profileImage}
-        />
+        
       </TouchableOpacity>
       
       <Text style={styles.headerTitle}>{title}</Text>

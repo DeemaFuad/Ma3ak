@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.0.110:5000/auth'; // Use http:// and your development machine's local IP address
+const API_URL = 'http://192.168.0.102:5000/auth'; // Use http:// and your development machine's local IP address
 
 export default function LoginScreen({ navigation, onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -27,9 +27,13 @@ export default function LoginScreen({ navigation, onLoginSuccess }) {
   const storeUserData = async (token, user) => {
     try {
       await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('userData', JSON.stringify(user));
+      await AsyncStorage.setItem('userData', JSON.stringify({
+        ...user,
+        token // Include token in userData for easy access
+      }));
     } catch (error) {
       console.error('Error storing user data:', error);
+      throw error;
     }
   };
 

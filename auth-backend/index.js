@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const volunteerRequestRoutes = require('./routes/volunteerRequests');
+const profileRoutes = require('./routes/profile');
 
 const app = express();
 
@@ -28,6 +29,7 @@ connectDB();
 // Routes
 app.use('/auth', authRoutes);
 app.use('/volunteerRequests', volunteerRequestRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
