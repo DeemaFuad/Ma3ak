@@ -179,4 +179,36 @@ router.post('/update-location', auth, async (req, res) => {
   }
 });
 
+// Get volunteer's home screen data
+router.get('/home-data', auth, async (req, res) => {
+  try {
+    const volunteerId = req.user.id;
+
+    // Get pending requests count
+    const pendingRequestsCount = await Request.countDocuments({
+      status: 'pending',
+      assignedVolunteer: { $ne: volunteerId }
+    });
+
+    // Get current request (if any)
+    const currentRequest = await Request.findOne({
+      assignedVolunteer: volunteerId,
+      status: 'attended'
+    }).populate('userId', 'name');
+
+    res.json({
+      pendingRequestsCount,
+      currentRequest: currentRequest ? {
+        id: currentRequest._id,
+        studentName: currentRequest.userId.name,
+        assistanceType: currentRequest.assistanceType,
+        createdAt: currentRequest.createdAt
+      } : null
+    });
+  } catch (error) {
+    console.error('Error fetching volunteer home data:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 module.exports = router; 

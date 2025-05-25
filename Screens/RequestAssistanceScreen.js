@@ -12,6 +12,7 @@ import {
   Platform,
   Vibration,
   Image,
+  PermissionsAndroid,
 } from 'react-native';
 import * as Location from 'expo-location';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -32,6 +33,31 @@ const ASSISTANCE_OPTIONS = [
   { key: 'other', label: 'Other' },
 ];
 
+// Request RECORD_AUDIO permission (Android only)
+export const requestAudioPermission = async () => {
+  if (Platform.OS !== 'android') return true;
+  try {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
+    );
+    return granted === PermissionsAndroid.RESULTS.GRANTED;
+  } catch (err) {
+    console.warn('Audio permission error:', err);
+    return false;
+  }
+};
+
+// Check if speech recognition is available
+export const checkVoiceRecognitionAvailable = async () => {
+  try {
+    const available = await Voice.isAvailable();
+    return available;
+  } catch (err) {
+    console.warn('Voice recognition check error:', err);
+    return false;
+  }
+};
+
 const RequestAssistanceScreen = () => {
   const navigation = useNavigation();
   const [selectedOption, setSelectedOption] = useState(null);
@@ -46,6 +72,7 @@ const RequestAssistanceScreen = () => {
   const [locationError, setLocationError] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const [voiceError, setVoiceError] = useState(null);
+  const [isVoiceAvailable, setIsVoiceAvailable] = useState(false);
 
   useEffect(() => {
     const fetchInitialLocation = async () => {
@@ -78,28 +105,28 @@ const RequestAssistanceScreen = () => {
     fetchInitialLocation();
   }, []);
 
+  // Synchronously set up listeners ONCE
   useEffect(() => {
-    // Initialize voice recognition
-    const initVoice = async () => {
-      try {
-        await Voice.isAvailable();
-        Voice.onSpeechStart = onSpeechStart;
-        Voice.onSpeechEnd = onSpeechEnd;
-        Voice.onSpeechResults = onSpeechResults;
-        Voice.onSpeechError = onSpeechError;
-      } catch (e) {
-        setVoiceError('Voice recognition is not available on this device');
+    // 1. Setup handlers first
+    Voice.onSpeechStart = onSpeechStart;
+    Voice.onSpeechEnd = onSpeechEnd;
+    Voice.onSpeechResults = onSpeechResults;
+  
+    // 2. OPTIONAL: Check if voice recognition is available
+    Voice.isAvailable().then((available) => {
+      if (!available) {
+        console.warn("Voice recognition is not available on this device");
       }
-    };
-
-    initVoice();
-
+    }).catch(e => {
+      console.error("Error checking voice availability", e);
+    });
+  
+    // 3. Cleanup only when component unmounts
     return () => {
-      // Cleanup
       Voice.destroy().then(Voice.removeAllListeners);
     };
   }, []);
-
+  
   const onSpeechStart = () => {
     setIsListening(true);
     setVoiceError(null);
@@ -135,6 +162,10 @@ const RequestAssistanceScreen = () => {
   const startListening = async () => {
     try {
       setVoiceError(null);
+      if (!isVoiceAvailable || !Voice || typeof Voice.start !== 'function') {
+        setVoiceError('Voice recognition is not available.');
+        return;
+      }
       await Voice.start('en-US');
     } catch (e) {
       setVoiceError(e.message || 'Failed to start voice recognition');
@@ -144,6 +175,10 @@ const RequestAssistanceScreen = () => {
 
   const stopListening = async () => {
     try {
+      if (!isVoiceAvailable || !Voice || typeof Voice.stop !== 'function') {
+        setVoiceError('Voice recognition is not available.');
+        return;
+      }
       await Voice.stop();
     } catch (e) {
       setVoiceError(e.message || 'Failed to stop voice recognition');
@@ -300,13 +335,14 @@ const RequestAssistanceScreen = () => {
             <TouchableOpacity
               style={[styles.micButton, isListening && styles.micButtonRecording]}
               onPress={isListening ? stopListening : startListening}
+              disabled={!isVoiceAvailable}
               accessibilityLabel={isListening ? "Stop voice input" : "Start voice input"}
               accessibilityHint="Double tap to start or stop voice recognition"
             >
               <Icon 
                 name={isListening ? "stop-circle" : "mic"} 
                 size={24} 
-                color={isListening ? "#FF0000" : "#00796B"} 
+                color={isListening ? "#FF0000" : (!isVoiceAvailable ? "#BDBDBD" : "#00796B")} 
               />
             </TouchableOpacity>
           </View>
@@ -318,6 +354,11 @@ const RequestAssistanceScreen = () => {
           {voiceError && (
             <Text style={styles.errorText} accessibilityLiveRegion="polite">
               {voiceError}
+            </Text>
+          )}
+          {!isVoiceAvailable && (
+            <Text style={styles.errorText}>
+              Voice recognition is not available on this device.
             </Text>
           )}
           {isOtherSelected && (

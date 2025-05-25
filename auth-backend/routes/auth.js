@@ -256,4 +256,101 @@ router.get('/active-requests', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /auth/requests - Get all requests for the current user
+router.get('/requests', authenticateToken, async (req, res) => {
+  try {
+    console.log('Fetching requests for user:', req.user.id);
+    const requests = await Request.find({ userId: req.user.id })
+      .populate('assignedVolunteer', 'name phoneNumber')
+      .sort({ createdAt: -1 });
+
+    console.log('Found requests:', requests);
+    res.json({ 
+      success: true, 
+      requests 
+    });
+  } catch (error) {
+    console.error('Error fetching requests:', error);
+    res.status(500).json({ 
+      success: false, 
+      msg: 'Failed to fetch requests',
+      error: error.message 
+    });
+  }
+});
+
+// PUT /auth/requests/:id/cancel - Cancel a request
+router.put('/requests/:id/cancel', authenticateToken, async (req, res) => {
+  try {
+    const request = await Request.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
+      status: 'pending'
+    });
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Request not found or cannot be cancelled'
+      });
+    }
+
+    request.status = 'cancelled';
+    await request.save();
+
+    res.json({
+      success: true,
+      msg: 'Request cancelled successfully'
+    });
+  } catch (error) {
+    console.error('Error cancelling request:', error);
+    res.status(500).json({
+      success: false,
+      msg: 'Failed to cancel request'
+    });
+  }
+});
+
+// PUT /auth/requests/:id/finish - Mark a request as finished with optional feedback
+router.put('/requests/:id/finish', authenticateToken, async (req, res) => {
+  try {
+    const { rating, feedback } = req.body;
+    const request = await Request.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
+      status: 'attended'
+    });
+
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        msg: 'Request not found or cannot be marked as finished'
+      });
+    }
+
+    // Update request status and feedback
+    request.status = 'finished';
+    if (rating) {
+      request.volunteerRating = rating;
+    }
+    if (feedback) {
+      request.volunteerFeedback = feedback;
+    }
+    
+    await request.save();
+
+    res.json({
+      success: true,
+      msg: 'Request marked as finished',
+      request
+    });
+  } catch (error) {
+    console.error('Error finishing request:', error);
+    res.status(500).json({
+      success: false,
+      msg: 'Failed to mark request as finished'
+    });
+  }
+});
+
 module.exports = router; 

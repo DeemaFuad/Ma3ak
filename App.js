@@ -16,6 +16,7 @@ import ProfileScreen from './Screens/ProfileScreen';
 import RequestAssistanceScreen from './Screens/RequestAssistanceScreen';
 import MyRequestsScreen from './Screens/MyRequestsScreen';
 import VolunteerRequestsScreen from './Screens/VolunteerRequestsScreen';
+import MyTasksScreen from './Screens/MyTasksScreen';
 
 import { initializeAuth, isAuthenticated, getStoredUser } from './utils/auth';
 
@@ -115,8 +116,8 @@ const VolunteerTabs = () => {
         }}
       />
       <Tab.Screen
-        name="MyRequests"
-        component={MyRequestsScreen}
+        name="MyTasks"
+        component={MyTasksScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="list-outline" size={size} color={color} />

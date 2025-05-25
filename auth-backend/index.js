@@ -5,6 +5,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const volunteerRequestRoutes = require('./routes/volunteerRequests');
 const profileRoutes = require('./routes/profile');
+const volunteerTasksRoutes = require('./routes/volunteerTasks');
 
 const app = express();
 
@@ -30,6 +31,7 @@ connectDB();
 app.use('/auth', authRoutes);
 app.use('/volunteerRequests', volunteerRequestRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/volunteer-tasks', volunteerTasksRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -31,7 +31,7 @@ const RequestSchema = new mongoose.Schema({
   },  
   status: {
     type: String,
-    enum: ['pending', 'attended', 'completed', 'cancelled'],
+    enum: ['pending', 'attended', 'finished', 'cancelled'],
     default: 'pending',
   },
   notifiedVolunteers: [{
@@ -41,6 +41,16 @@ const RequestSchema = new mongoose.Schema({
   assignedVolunteer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  volunteerRating: {
+    type: Number,
+    min: 1,
+    max: 5,
+    required: false
+  },
+  volunteerFeedback: {
+    type: String,
+    required: false
   },
   createdAt: {
     type: Date,

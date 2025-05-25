@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator,
+  SafeAreaView,
+  Alert
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getStoredUser } from '../utils/auth';
 import Header from '../components/Header';
@@ -12,6 +20,7 @@ const BlindHomeScreen = () => {
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeRequest, setActiveRequest] = useState(null);
 
   useEffect(() => {
@@ -21,6 +30,7 @@ const BlindHomeScreen = () => {
   const loadUserAndRequests = async () => {
     try {
       setLoading(true);
+      setError(null);
       const userData = await getStoredUser();
       if (!userData?.token) {
         throw new Error('No authentication token found');
@@ -36,9 +46,12 @@ const BlindHomeScreen = () => {
 
       if (response.data.success && response.data.requests.length > 0) {
         setActiveRequest(response.data.requests[0]); // Get the most recent active request
+      } else {
+        setActiveRequest(null);
       }
     } catch (error) {
       console.error('Error loading data:', error);
+      setError(error.response?.data?.msg || 'Failed to load data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -57,12 +70,7 @@ const BlindHomeScreen = () => {
   };
 
   const getRequestStatus = () => {
-    if (!activeRequest) 
-      return {
-        text: `No active requests`,
-        icon: 'user-check',
-        color: '#4CAF50'
-      };
+    if (!activeRequest) return null;
 
     switch (activeRequest.status) {
       case 'pending':
@@ -73,9 +81,15 @@ const BlindHomeScreen = () => {
         };
       case 'attended':
         return {
-          text: `Volunteer ${activeRequest.assignedVolunteer?.name + 'is on the way'}!`,
+          text: `Volunteer ${activeRequest.assignedVolunteer?.name} is on the way!`,
           icon: 'user-check',
           color: '#4CAF50'
+        };
+      case 'finished':
+        return {
+          text: 'Request completed successfully',
+          icon: 'check-circle',
+          color: '#3BA99C'
         };
       default:
         return null;
@@ -84,16 +98,16 @@ const BlindHomeScreen = () => {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#3BA99C" />
-      </View>
+      </SafeAreaView>
     );
   }
 
   const requestStatus = getRequestStatus();
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Header title="Home" />
       
       <View style={styles.headerSection}>
@@ -101,19 +115,40 @@ const BlindHomeScreen = () => {
         <Text style={styles.weekday}>Today is {getWeekday()}</Text>
       </View>
 
-      {requestStatus && (
-        <View style={[styles.statusCard, { borderColor: requestStatus.color }]}>
-          <Icon name={requestStatus.icon} size={24} color={requestStatus.color} />
-          <Text style={[styles.statusText, { color: requestStatus.color }]}>
-            {requestStatus.text}
-          </Text>
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       )}
+
+      <View style={styles.statusSection}>
+        {requestStatus && (
+          <View style={[styles.statusCard, { borderColor: requestStatus.color }]}>
+            <Icon name={requestStatus.icon} size={24} color={requestStatus.color} />
+            <Text style={[styles.statusText, { color: requestStatus.color }]}>
+              {requestStatus.text}
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity 
+          style={styles.refreshButton}
+          onPress={loadUserAndRequests}
+          accessible={true}
+          accessibilityLabel="Refresh status"
+          accessibilityHint="Double tap to refresh the current request status"
+        >
+          <Icon name="refresh-cw" size={20} color="#3BA99C" />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={styles.button}
           onPress={() => navigation.navigate('RequestAssistance')}
+          accessible={true}
+          accessibilityLabel="Request assistance"
+          accessibilityHint="Double tap to create a new assistance request"
         >
           <Icon name="help-circle" size={24} color="#FFFFFF" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>Request Assistance</Text>
@@ -122,12 +157,15 @@ const BlindHomeScreen = () => {
         <TouchableOpacity 
           style={styles.button}
           onPress={() => navigation.navigate('MyRequests')}
+          accessible={true}
+          accessibilityLabel="View my requests"
+          accessibilityHint="Double tap to view your assistance requests history"
         >
           <Icon name="list" size={24} color="#FFFFFF" style={styles.buttonIcon} />
           <Text style={styles.buttonText}>View My Requests</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -157,24 +195,51 @@ const styles = StyleSheet.create({
     color: '#6C757D',
     marginTop: 5,
   },
+  statusSection: {
+    marginBottom: 30,
+    alignItems: 'center',
+  },
   statusCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     padding: 15,
     borderRadius: 10,
-    marginBottom: 30,
+    marginBottom: 15,
     borderWidth: 1,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    width: '100%',
   },
   statusText: {
     fontSize: 16,
     fontWeight: '500',
     marginLeft: 10,
+    flex: 1,
+  },
+  refreshButton: {
+    padding: 10,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  errorContainer: {
+    backgroundColor: '#FFEBEE',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontSize: 14,
+    textAlign: 'center',
   },
   buttonContainer: {
     gap: 20,
