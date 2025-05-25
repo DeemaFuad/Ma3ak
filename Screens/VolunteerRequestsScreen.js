@@ -19,6 +19,32 @@ import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 const API_URL = 'http://192.168.0.102:5000';
 
+// Helper function to calculate distance between two points
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; // Distance in meters
+
+  return distance;
+};
+
+// Helper function to format distance
+const formatDistance = (distanceInMeters) => {
+  if (distanceInMeters < 1000) {
+    return `${Math.round(distanceInMeters)}m away`;
+  } else {
+    return `${(distanceInMeters / 1000).toFixed(1)}km away`;
+  }
+};
+
 const VolunteerRequestsScreen = () => {
   const [requests, setRequests] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -67,7 +93,21 @@ const VolunteerRequestsScreen = () => {
         }
       );
 
-      setRequests(response.data);
+      // Add distance information to each request
+      const requestsWithDistance = response.data.map(request => ({
+        ...request,
+        distance: calculateDistance(
+          currentLocation.latitude,
+          currentLocation.longitude,
+          request.location.coordinates[1],
+          request.location.coordinates[0]
+        )
+      }));
+
+      // Sort requests by distance
+      requestsWithDistance.sort((a, b) => a.distance - b.distance);
+
+      setRequests(requestsWithDistance);
     } catch (error) {
       console.error('Error fetching requests:', error.message || error);
       Alert.alert('Error', error.response?.data?.message || 'Failed to fetch requests');
@@ -173,9 +213,7 @@ const VolunteerRequestsScreen = () => {
       <View style={styles.locationInfo}>
         <Icon name="location" size={20} color="#757575" />
         <Text style={styles.locationText}>
-          {item.location?.coordinates ? 
-            `Lat: ${item.location.coordinates[1].toFixed(4)}, Long: ${item.location.coordinates[0].toFixed(4)}` :
-            'Location not specified'}
+          {formatDistance(item.distance)}
         </Text>
       </View>
 
