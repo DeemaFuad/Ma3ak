@@ -10,11 +10,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
 import { getStoredUser, logout } from '../utils/auth';
 import Header from '../components/Header';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import storageEventEmitter from '../utils/storageEventEmitter';
 
 const API_URL = 'http://192.168.0.102:5000/api/profile';
 
@@ -45,13 +47,7 @@ const ProfileScreen = () => {
           [
             {
               text: 'OK',
-              onPress: () => {
-                logout();
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Welcome' }],
-                });
-              },
+              onPress: handleLogout,
             },
           ]
         );
@@ -82,13 +78,7 @@ const ProfileScreen = () => {
           [
             {
               text: 'OK',
-              onPress: () => {
-                logout();
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Welcome' }],
-                });
-              },
+              onPress: handleLogout,
             },
           ]
         );
@@ -128,13 +118,7 @@ const ProfileScreen = () => {
           [
             {
               text: 'OK',
-              onPress: () => {
-                logout();
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: 'Welcome' }],
-                });
-              },
+              onPress: handleLogout,
             },
           ]
         );
@@ -148,13 +132,27 @@ const ProfileScreen = () => {
 
   const handleLogout = async () => {
     try {
+      setLoading(true);
+      // Clear axios default headers
+      delete axios.defaults.headers.common['Authorization'];
+      
+      // Clear AsyncStorage
+      await AsyncStorage.multiRemove(['userToken', 'userData']);
+      
+      // Emit events for both storage removals
+      storageEventEmitter.emit('authChange', { key: 'userToken' });
+      storageEventEmitter.emit('authChange', { key: 'userData' });
+      
+      // Call the logout function from auth utils
       await logout();
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Welcome' }],
-      });
+      
+      // The AppNavigator will automatically detect the auth state change
+      // and navigate to the Auth stack
     } catch (error) {
-      Alert.alert('Error', 'Failed to logout');
+      console.error('Error during logout:', error);
+      Alert.alert('Error', 'Failed to logout properly. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

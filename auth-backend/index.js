@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const volunteerRequestRoutes = require('./routes/volunteerRequests');
 const profileRoutes = require('./routes/profile');
 const volunteerTasksRoutes = require('./routes/volunteerTasks');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use('/auth', authRoutes);
 app.use('/volunteerRequests', volunteerRequestRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/volunteer-tasks', volunteerTasksRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

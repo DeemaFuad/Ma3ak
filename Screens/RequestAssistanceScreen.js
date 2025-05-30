@@ -107,23 +107,33 @@ const RequestAssistanceScreen = () => {
 
   // Synchronously set up listeners ONCE
   useEffect(() => {
-    // 1. Setup handlers first
-    Voice.onSpeechStart = onSpeechStart;
-    Voice.onSpeechEnd = onSpeechEnd;
-    Voice.onSpeechResults = onSpeechResults;
-  
-    // 2. OPTIONAL: Check if voice recognition is available
-    Voice.isAvailable().then((available) => {
-      if (!available) {
-        console.warn("Voice recognition is not available on this device");
+    const setupVoice = async () => {
+      try {
+        // Initialize Voice
+        await Voice.isAvailable();
+        setIsVoiceAvailable(true);
+        
+        // Setup handlers
+        Voice.onSpeechStart = onSpeechStart;
+        Voice.onSpeechEnd = onSpeechEnd;
+        Voice.onSpeechResults = onSpeechResults;
+        Voice.onSpeechError = onSpeechError;
+      } catch (error) {
+        console.warn('Voice recognition setup failed:', error);
+        setIsVoiceAvailable(false);
+        setVoiceError('Voice recognition is not available on this device');
       }
-    }).catch(e => {
-      console.error("Error checking voice availability", e);
-    });
-  
-    // 3. Cleanup only when component unmounts
+    };
+
+    setupVoice();
+
+    // Cleanup only when component unmounts
     return () => {
-      Voice.destroy().then(Voice.removeAllListeners);
+      try {
+        Voice.destroy().then(Voice.removeAllListeners);
+      } catch (error) {
+        console.warn('Error cleaning up Voice:', error);
+      }
     };
   }, []);
   
@@ -162,12 +172,13 @@ const RequestAssistanceScreen = () => {
   const startListening = async () => {
     try {
       setVoiceError(null);
-      if (!isVoiceAvailable || !Voice || typeof Voice.start !== 'function') {
+      if (!isVoiceAvailable) {
         setVoiceError('Voice recognition is not available.');
         return;
       }
       await Voice.start('en-US');
     } catch (e) {
+      console.warn('Error starting voice recognition:', e);
       setVoiceError(e.message || 'Failed to start voice recognition');
       setIsListening(false);
     }
@@ -175,12 +186,13 @@ const RequestAssistanceScreen = () => {
 
   const stopListening = async () => {
     try {
-      if (!isVoiceAvailable || !Voice || typeof Voice.stop !== 'function') {
-        setVoiceError('Voice recognition is not available.');
+      if (!isVoiceAvailable) {
+        setVoiceError('');
         return;
       }
       await Voice.stop();
     } catch (e) {
+      console.warn('Error stopping voice recognition:', e);
       setVoiceError(e.message || 'Failed to stop voice recognition');
     }
   };

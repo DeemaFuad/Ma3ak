@@ -15,10 +15,13 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import storageEventEmitter from '../utils/storageEventEmitter';
 
-const API_URL = 'http://192.168.0.102:5000/auth'; // Use http:// and your development machine's local IP address
+const API_URL = 'http://192.168.0.102:5000/auth';// Use http:// and your development machine's local IP address
 
-export default function LoginScreen({ navigation, onLoginSuccess }) {
+
+export default function LoginScreen() {
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,11 +29,14 @@ export default function LoginScreen({ navigation, onLoginSuccess }) {
 
   const storeUserData = async (token, user) => {
     try {
-      await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('userData', JSON.stringify({
-        ...user,
-        token // Include token in userData for easy access
-      }));
+      await AsyncStorage.multiSet([
+        ['userToken', token],
+        ['userData', JSON.stringify({ ...user, token })]
+      ]);
+      
+      // Emit events for both storage changes
+      storageEventEmitter.emit('authChange', { key: 'userToken' });
+      storageEventEmitter.emit('authChange', { key: 'userData' });
     } catch (error) {
       console.error('Error storing user data:', error);
       throw error;
@@ -56,17 +62,14 @@ export default function LoginScreen({ navigation, onLoginSuccess }) {
 
       const { token, user } = response.data;
       
-      // Store the token and user data securely
+      // Store the token and user data
       await storeUserData(token, user);
       
       // Set the authorization header for future requests
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Force reload by resetting navigation to Welcome screen
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Welcome' }],
-      });
+      // The AppNavigator will automatically detect the auth state change
+      // and navigate to the appropriate screen
     } catch (err) {
       console.log("Login error:", err?.response?.data || err.message);
       const errorMessage = err.response?.data?.msg || 'An error occurred during login';

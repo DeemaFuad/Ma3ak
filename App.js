@@ -6,6 +6,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import storageEventEmitter from './utils/storageEventEmitter';
 
 import WelcomeScreen from './Screens/WelcomeScreen';
 import LoginScreen from './Screens/LoginScreen';
@@ -17,6 +19,8 @@ import RequestAssistanceScreen from './Screens/RequestAssistanceScreen';
 import MyRequestsScreen from './Screens/MyRequestsScreen';
 import VolunteerRequestsScreen from './Screens/VolunteerRequestsScreen';
 import MyTasksScreen from './Screens/MyTasksScreen';
+import AdminRequestsScreen from './Screens/AdminRequestsScreen';
+import AdminUsersScreen from './Screens/AdminUsersScreen';
 
 import { initializeAuth, isAuthenticated, getStoredUser } from './utils/auth';
 
@@ -25,6 +29,60 @@ SplashScreen.preventAutoHideAsync().catch(console.warn);
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const AuthStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Welcome" component={WelcomeScreen} />
+    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="SignUp" component={SignUpScreen} />
+  </Stack.Navigator>
+);
+
+const AdminTabs = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarStyle: {
+          backgroundColor: '#1E1E1E',
+          borderTopColor: '#333',
+        },
+        tabBarActiveTintColor: '#14957B',
+        tabBarInactiveTintColor: '#888',
+        headerShown: false,
+      }}
+    >
+      <Tab.Screen
+        name="AdminRequests"
+        component={AdminRequestsScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="list-outline" size={size} color={color} />
+          ),
+          title: 'Requests',
+        }}
+      />
+      <Tab.Screen
+        name="AdminUsers"
+        component={AdminUsersScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="people-outline" size={size} color={color} />
+          ),
+          title: 'Users',
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="person-outline" size={size} color={color} />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 const BlindStudentTabs = () => {
   return (
@@ -138,30 +196,75 @@ const VolunteerTabs = () => {
   );
 };
 
-export default function App() {
-  const [appIsReady, setAppIsReady] = useState(false);
+const AppNavigator = () => {
   const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
   const [userType, setUserType] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const checkAuth = async () => {
+  useEffect(() => {
+    checkAuthState();
+  }, []);
+
+  const checkAuthState = async () => {
     try {
-      const authenticated = await isAuthenticated();
-      setIsUserAuthenticated(authenticated);
-
-      if (authenticated) {
-        const user = await getStoredUser();
-        setUserType(user?.userType);
-      }
-    } catch (e) {
-      console.warn(e);
+      const user = await getStoredUser();
+      setIsUserAuthenticated(!!user);
+      setUserType(user?.userType);
+    } catch (error) {
+      console.error('Error checking auth state:', error);
+      setIsUserAuthenticated(false);
+      setUserType(null);
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Listen for auth state changes using the event emitter
+  useEffect(() => {
+    const listener = (event) => {
+      if (event.key === 'userData' || event.key === 'userToken') {
+        checkAuthState();
+      }
+    };
+
+    const subscription = storageEventEmitter.addListener('authChange', listener);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  if (isLoading) {
+    return null;
+  }
+
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isUserAuthenticated ? (
+        <Stack.Screen name="Auth" component={AuthStack} />
+      ) : (
+        <>
+          {userType === 'blind' && (
+            <Stack.Screen name="BlindStudentTabs" component={BlindStudentTabs} />
+          )}
+          {userType === 'volunteer' && (
+            <Stack.Screen name="VolunteerTabs" component={VolunteerTabs} />
+          )}
+          {userType === 'admin' && (
+            <Stack.Screen name="AdminTabs" component={AdminTabs} />
+          )}
+        </>
+      )}
+    </Stack.Navigator>
+  );
+};
+
+export default function App() {
+  const [appIsReady, setAppIsReady] = useState(false);
 
   useEffect(() => {
     async function prepare() {
       try {
         await initializeAuth();
-        await checkAuth();
       } catch (e) {
         console.warn(e);
       } finally {
@@ -172,12 +275,6 @@ export default function App() {
     prepare();
   }, []);
 
-  // Add effect to check auth state periodically
-  useEffect(() => {
-    const interval = setInterval(checkAuth, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   const onLayoutRootView = useCallback(async () => {
     if (appIsReady) {
       await SplashScreen.hideAsync();
@@ -185,34 +282,12 @@ export default function App() {
   }, [appIsReady]);
 
   if (!appIsReady) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#141613' }}>
-        <Text style={{ color: 'white' }}>Loading...</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
     <NavigationContainer onReady={onLayoutRootView}>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isUserAuthenticated ? (
-          // Auth Stack
-          <>
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="SignUp" component={SignUpScreen} />
-          </>
-        ) : (
-          // Main App Stack
-          <>
-            {userType === 'blind' ? (
-              <Stack.Screen name="BlindStudentTabs" component={BlindStudentTabs} />
-            ) : (
-              <Stack.Screen name="VolunteerTabs" component={VolunteerTabs} />
-            )}
-          </>
-        )}
-      </Stack.Navigator>
+      <AppNavigator />
     </NavigationContainer>
   );
 }
